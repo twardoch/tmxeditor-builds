@@ -3,12 +3,25 @@ this_file: WORK.md
 ---
 # Work
 
-## Website — verification in progress
+## Website — completed
 
 Implemented a static download site generated from published release assets and
 the README usage section. Local tests (7), actionlint and desktop/mobile browser
 checks pass. The 390px mobile layout has no horizontal overflow; navigation to
-the usage guide works. Hosted workflow and Pages verification are next.
+the usage guide works.
+
+- [Initial website workflow](https://github.com/twardoch/tmxeditor-builds/actions/runs/36749859663)
+  generated and committed `docs/` using GITHUB_TOKEN, then successfully requested
+  a branch-based Pages build. Existing `main` → `/docs` settings are preserved.
+- [Release-workflow completion](https://github.com/twardoch/tmxeditor-builds/actions/runs/36749925543)
+  triggered a successful [automatic website refresh](https://github.com/twardoch/tmxeditor-builds/actions/runs/36749966720).
+  The already-published release was skipped; no installers were rebuilt.
+- The public HTTPS page renders correctly in Chrome and its HTML matches
+  `docs/index.html` byte for byte. All five direct download/source/checksum links
+  returned HTTP 200. The rendered guide includes macOS/Windows installation,
+  opening/editing/saving TMX, conversion, updates and manual release builds.
+- Closely spaced verification requests caused GitHub to supersede an earlier
+  Pages deployment; the final request served the correct generated page.
 
 ## 2026-09-30 — completed
 
