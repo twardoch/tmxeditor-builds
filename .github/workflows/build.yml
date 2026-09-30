@@ -1,0 +1,157 @@
+# this_file: .github/workflows/build.yml
+name: Build distributables
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+    inputs:
+      upstream_tag:
+        description: 'Upstream release tag (blank = latest stable release)'
+        type: string
+        default: ''
+      revision:
+        description: 'Build revision; increase to rebuild an already published version'
+        type: string
+        default: '1'
+permissions:
+  contents: read
+concurrency:
+  group: release-build
+  cancel-in-progress: false
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.release.outputs.build }}
+      tag: ${{ steps.release.outputs.tag }}
+      sha: ${{ steps.release.outputs.sha }}
+      release_tag: ${{ steps.release.outputs.release_tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - uses: actions/github-script@v7
+        id: release
+        env:
+          REQUESTED_TAG: ${{ inputs.upstream_tag }}
+          REVISION: ${{ inputs.revision || '1' }}
+        with:
+          script: |
+            const { releaseTag, needsBuild } = require('./scripts/release-policy.cjs');
+            const upstream = { owner: 'maxprograms-com', repo: 'TMXEditor' };
+            const requested = process.env.REQUESTED_TAG;
+            const { data: release } = requested
+              ? await github.rest.repos.getReleaseByTag({ ...upstream, tag: requested })
+              : await github.rest.repos.getLatestRelease(upstream);
+            if (release.draft) throw new Error('Upstream release is still a draft');
+            const tag = releaseTag(release.tag_name, process.env.REVISION);
+            let existing = null;
+            try {
+              existing = (await github.rest.repos.getReleaseByTag({ ...context.repo, tag })).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            const { data: commit } = await github.rest.repos.getCommit({ ...upstream, ref: `refs/tags/${release.tag_name}` });
+            core.setOutput('build', String(needsBuild(existing)));
+            core.setOutput('tag', release.tag_name);
+            core.setOutput('sha', commit.sha);
+            core.setOutput('release_tag', tag);
+            core.setOutput('prerelease', String(release.prerelease));
+            await core.summary.addRaw(`${tag}: ${needsBuild(existing) ? 'building' : 'already published'}; upstream commit ${commit.sha}`).write();
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.build == 'true'
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: mac
+            arch: arm64
+          - os: macos-15-intel
+            platform: mac
+            arch: x64
+          - os: windows-2022
+            platform: win
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: maxprograms-com/TMXEditor
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: upstream
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            upstream/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: upstream
+      - run: npm run build
+        working-directory: upstream
+      - name: Build native distributable
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run package -- --${{ matrix.platform }} --${{ matrix.arch }}
+      - name: Test packaged application and collect artifact
+        env:
+          UPSTREAM_TAG: ${{ needs.resolve.outputs.tag }}
+          UPSTREAM_SHA: ${{ needs.resolve.outputs.sha }}
+        run: node scripts/verify-package.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.platform }}-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: maxprograms-com/TMXEditor
+          ref: ${{ needs.resolve.outputs.sha }}
+          path: upstream
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: artifacts
+          merge-multiple: true
+      - name: Prepare source, checksums and release notes
+        env:
+          UPSTREAM_TAG: ${{ needs.resolve.outputs.tag }}
+          UPSTREAM_SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          git -C upstream archive --format=tar.gz --prefix=TMXEditor/ --output="$GITHUB_WORKSPACE/artifacts/TMXEditor-source.tar.gz" HEAD
+          cp upstream/LICENSE artifacts/TMXEditor-LICENSE.txt
+          node scripts/release-files.mjs
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+          PRERELEASE: ${{ needs.resolve.outputs.prerelease }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "TMXEditor $RELEASE_TAG (community build)" --notes-file release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" artifacts/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease="$PRERELEASE" --latest=false --notes-file release-notes.md

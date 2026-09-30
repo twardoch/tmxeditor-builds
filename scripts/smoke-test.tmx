@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- this_file: scripts/smoke-test.tmx -->
+<tmx version="1.4">
+  <header creationtool="tmxeditor-builds smoke test" creationtoolversion="1.0"
+          segtype="sentence" o-tmf="TMX" adminlang="en" srclang="en" datatype="PlainText"/>
+  <body>
+    <tu tuid="smoke-1">
+      <tuv xml:lang="en"><seg>Font family</seg></tuv>
+      <tuv xml:lang="pl"><seg>Rodzina fontów</seg></tuv>
+    </tu>
+    <tu tuid="smoke-2">
+      <tuv xml:lang="en"><seg>Save changes</seg></tuv>
+      <tuv xml:lang="pl"><seg>Zapisz zmiany</seg></tuv>
+    </tu>
+  </body>
+</tmx>
