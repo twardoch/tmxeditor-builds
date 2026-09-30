@@ -3,11 +3,60 @@ this_file: README.md
 ---
 # TMXEditor community builds
 
-[Download installers](https://github.com/twardoch/tmxeditor-builds/releases) · [Build a release](https://github.com/twardoch/tmxeditor-builds/actions/workflows/build.yml)
+[Website and downloads](https://code.twardoch.com/tmxeditor-builds/) · [All releases](https://github.com/twardoch/tmxeditor-builds/releases) · [Build a release](https://github.com/twardoch/tmxeditor-builds/actions/workflows/build.yml)
 
 Builds the unmodified [TMXEditor source](https://github.com/maxprograms-com/TMXEditor)
 for Windows x64, macOS Apple Silicon and macOS Intel. Electron is bundled;
 users do not need Node.js installed.
+
+<!-- usage:start -->
+## Install and use
+
+### Install on macOS
+
+1. In **Apple menu → About This Mac**, check whether your Mac lists an Apple
+   chip or an Intel processor. Download the matching **Apple Silicon** or **Intel** DMG.
+2. Open the DMG and drag **TMXEditor** into **Applications**. Eject the disk image.
+3. Open TMXEditor from Applications. These builds are not notarized. If macOS
+   blocks the app because the developer cannot be verified, and you trust this
+   download, use **System Settings → Privacy & Security → Open Anyway**, then
+   confirm. See [Apple's opening instructions](https://support.apple.com/en-us/102445).
+
+### Install on Windows
+
+1. Download the **Windows x64** installer for a 64-bit Intel or AMD PC.
+2. Run the `.exe` and follow the installer, choosing an installation folder if needed.
+3. Open **TMXEditor** from the Start menu. The installer is unsigned; Windows
+   may display a reputation warning. If SmartScreen offers **More info → Run
+   anyway**, use it only if you trust the download. A managed PC may require
+   your administrator's approval.
+
+### Edit your first translation memory
+
+1. Keep a copy of your original `.tmx` file. Launch TMXEditor and choose
+   **File → Open** (`⌘O` on macOS, `Ctrl+O` on Windows).
+2. Select a translation unit and edit its segment text. Use **Edit → Confirm
+   Edit** (`Option+Enter` / `Alt+Enter`) to confirm the change.
+3. Use **View → Filter Translation Units** or **View → Sort Translation Units**
+   to find the entries you need.
+4. Choose **File → Save As** to save a separate TMX file, or **File → Save**
+   (`⌘S` / `Ctrl+S`) to update the current file. Confirming an edit and saving
+   the file are separate steps.
+
+To start from a spreadsheet, choose **File → Convert Excel File to TMX** or
+**File → Convert CSV/TAB Delimited File to TMX**, then follow the conversion dialog.
+Menu names here are from the English interface. For more detail, see the
+[upstream user guide](https://github.com/maxprograms-com/TMXEditor/blob/master/tmxeditor_en.pdf).
+
+### Update the app
+
+Download the newest package for your platform from the
+[download page](https://code.twardoch.com/tmxeditor-builds/), quit TMXEditor,
+then replace the app in Applications on macOS or run the new Windows installer.
+Keep your TMX files in your documents folder, separate from the application.
+Older builds, checksums and matching source archives remain on the
+[releases page](https://github.com/twardoch/tmxeditor-builds/releases).
+<!-- usage:end -->
 
 ## Build a new release
 
@@ -83,6 +132,30 @@ node scripts/verify-package.mjs
 
 Output goes into `dist/`; verified installers are copied to `artifacts/`.
 Upstream dependency or build changes may require updating this repository.
+
+## Website maintenance
+
+GitHub Pages publishes `main` → `/docs` at
+<https://code.twardoch.com/tmxeditor-builds/>. The **Update website** workflow
+runs after successful distributable workflows, on release changes, on website
+source changes and by manual dispatch. It regenerates and commits `docs/`, then
+explicitly requests a Pages build: commits made with `GITHUB_TOKEN` do not
+automatically trigger branch-based Pages builds. No extra token is required.
+
+Edit the usage section between the markers in this README to update both
+surfaces. Edit `site/index.html` and `site/style.css` for layout and appearance;
+`docs/` is generated. The site features the highest published stable version
+and build revision, so an older rebuild or prerelease cannot replace it.
+
+```sh
+npm ci
+npm run site                # requires an authenticated gh CLI
+python3 -m http.server 8000 --directory docs
+gh workflow run site.yml --repo twardoch/tmxeditor-builds
+```
+
+Open <http://localhost:8000> for a local preview. All download links and usage
+instructions are static HTML; visitors do not need JavaScript or GitHub API access.
 
 ## Attribution and source
 

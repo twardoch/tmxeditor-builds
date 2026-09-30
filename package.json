@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "site": "node scripts/site.mjs",
     "test": "node --test tests/*.test.mjs",
     "package": "electron-builder --config electron-builder.cjs --publish never"
   },
   "devDependencies": {
-    "electron-builder": "26.15.3"
+    "electron-builder": "26.15.3",
+    "marked": "18.0.14",
+    "semver": "7.7.4"
   }
 }

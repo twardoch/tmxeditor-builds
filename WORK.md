@@ -3,6 +3,13 @@ this_file: WORK.md
 ---
 # Work
 
+## Website — verification in progress
+
+Implemented a static download site generated from published release assets and
+the README usage section. Local tests (7), actionlint and desktop/mobile browser
+checks pass. The 390px mobile layout has no horizontal overflow; navigation to
+the usage guide works. Hosted workflow and Pages verification are next.
+
 ## 2026-09-30 — completed
 
 Created the public repository and published

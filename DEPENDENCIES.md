@@ -10,6 +10,12 @@ this_file: DEPENDENCIES.md
 - Official GitHub Actions checkout, setup-node, github-script, upload-artifact and
   download-artifact: source resolution, runners and artifact transfer.
 - GitHub CLI: draft release creation, upload and publication, using GITHUB_TOKEN.
+- marked 18.0.14: renders the README usage section into the static website.
+- semver 7.7.4: selects the newest stable release and build revision correctly.
+
+The website uses plain HTML/CSS with no browser JavaScript or external fonts.
+GitHub Pages serves generated `docs/` from the main branch; the website workflow
+requests a Pages build through the official REST API after generation.
 
 References: [builder configuration](https://www.electron.build/configuration/),
 [GitHub releases API](https://docs.github.com/en/rest/releases/releases),
