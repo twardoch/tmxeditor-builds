@@ -3,4 +3,5 @@ this_file: PLAN.md
 ---
 # Plan
 
-- Verify the first three-platform GitHub Actions build and published assets.
+No pending implementation work. The initial three-platform release and repeat-run
+skip behavior are verified; see WORK.md for evidence.
